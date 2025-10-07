@@ -91,10 +91,10 @@ h2 {
     padding: 10px 0;
 }
 
+/* COR DINÂMICA: A cor será definida pelo JavaScript via estilo inline */
 .nota-score {
     font-size: 3em;
     font-weight: 700;
-    color: #48c9b0; /* Verde/Ciano */
     line-height: 1;
 }
 
@@ -123,11 +123,12 @@ h2 {
     line-height: 1;
 }
 
+/* COR DINÂMICA: A cor da seta atual será definida pelo JavaScript via estilo inline */
 .seta-atual {
-    color: #ffba08; /* Amarelo (Vento Real) */
     transition: transform 0.5s ease-out;
 }
 
+/* Cor fixa para a seta ideal */
 .seta-desejada {
     color: #48c9b0; /* Verde/Ciano (Vento Ideal) */
 }
