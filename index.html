@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vento em Itacoatiara</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <title>Vento em Itacoatiara - Análise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -24,14 +24,14 @@
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
+            max-width: 600px;
             width: 100%;
         }
 
         h1 {
-            font-size: 1.8em;
+            font-size: 2em;
             margin-bottom: 5px;
-            border-bottom: 2px solid #ffba08; /* Amarelo da Areia */
+            border-bottom: 2px solid #ffba08;
             padding-bottom: 5px;
         }
 
@@ -42,25 +42,74 @@
             margin-bottom: 30px;
         }
 
-        #direcao-vento, #velocidade-vento {
-            font-size: 2.5em;
+        /* Estilo da Tabela */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.1);
             font-weight: 600;
-            color: #ffba08;
-            margin: 10px 0;
+            text-transform: uppercase;
+            font-size: 0.85em;
         }
 
-        .label {
-            font-size: 0.9em;
+        .valor-principal {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #ffba08; /* Amarelo */
+        }
+
+        /* Estilo das Setas */
+        .setas-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+            padding: 10px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.3);
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+        }
+
+        .seta-item {
+            text-align: center;
+        }
+
+        .seta-label {
+            font-size: 0.8em;
             opacity: 0.8;
-            margin-top: 20px;
         }
 
-        #icone-vento {
-            font-size: 4em;
-            margin-bottom: 20px;
-            display: inline-block;
-            transition: transform 0.5s ease-in-out; /* Animação da seta */
+        .icone-seta {
+            font-size: 3em;
+            display: block;
+            margin: 5px auto;
             line-height: 1;
+        }
+
+        #seta-atual {
+            color: #ffba08; /* Amarelo */
+            transition: transform 0.5s ease-out;
+        }
+
+        #seta-desejada {
+            color: #48c9b0; /* Verde/Ciano */
+        }
+        
+        /* Estilo para a Nota de Qualidade */
+        #nota-qualidade {
+            font-size: 3em;
+            font-weight: 700;
+            margin-top: 20px;
+            color: #48c9b0;
         }
 
         .loading, .error {
@@ -72,7 +121,7 @@
 <body>
 
 <div class="container">
-    <h1>Previsão do Vento</h1>
+    <h1>Análise do Vento</h1>
     <h2>Praia de Itacoatiara, Niterói</h2>
 
     <div id="status-display">
@@ -85,6 +134,9 @@
     // Coordenadas aproximadas da Praia de Itacoatiara
     const ITACOATIARA_LAT = -22.97; 
     const ITACOATIARA_LON = -43.04;
+    
+    // Vento Desejado (Exemplo: 10 graus é NE, ótimo para surf em Ita)
+    const WIND_DIRECTION_DESIRED_DEG = 10; 
 
     /**
      * Converte graus de direção do vento (0-360) para pontos cardeais.
@@ -101,6 +153,32 @@
         if (deg > 247.5 && deg <= 292.5) return "Oeste (O)";
         if (deg > 292.5 && deg <= 337.5) return "Noroeste (NO)";
         return "Indefinido";
+    }
+
+    /**
+     * Calcula uma nota de 0 a 10 com base na proximidade da direção do vento atual com a desejada.
+     * 10 = direção exata.
+     * 0 = direção oposta (180 graus de diferença).
+     * @param {number} currentDeg - Direção atual do vento em graus (0-360).
+     * @param {number} desiredDeg - Direção desejada em graus (0-360).
+     * @returns {number} - Nota de 0 a 10.
+     */
+    function calculateWindScore(currentDeg, desiredDeg) {
+        // Calcula a diferença angular
+        let diff = Math.abs(currentDeg - desiredDeg);
+        
+        // Se a diferença for maior que 180, pega o caminho mais curto
+        if (diff > 180) {
+            diff = 360 - diff;
+        }
+
+        // 180 graus de diferença (oposto) = nota 0
+        // 0 graus de diferença (igual) = nota 10
+        // Mapeia a diferença de 0-180 para a nota 10-0
+        const score = 10 - (diff / 180) * 10;
+        
+        // Limita a duas casas decimais
+        return score.toFixed(1);
     }
 
     /**
@@ -132,14 +210,48 @@
             const windDirectionDeg = data.current.wind_direction_10m; // graus
             const cardinalDirection = degToCardinal(windDirectionDeg);
             
+            // Calcula a nota
+            const windScore = calculateWindScore(windDirectionDeg, WIND_DIRECTION_DESIRED_DEG);
+
+            // Determina a direção desejada em pontos cardeais
+            const desiredCardinalDirection = degToCardinal(WIND_DIRECTION_DESIRED_DEG);
+            
             // Renderiza o resultado
             display.innerHTML = `
-                <div id="icone-vento" style="transform: rotate(${windDirectionDeg + 180}deg);">
-                    &#x27A4; </div>
-                <p class="label">DIREÇÃO DO VENTO</p>
-                <div id="direcao-vento">${cardinalDirection}</div>
-                <p class="label">VELOCIDADE ATUAL</p>
-                <div id="velocidade-vento">${windSpeed} km/h</div>
+                <p class="seta-label">Qualidade da Direção</p>
+                <div id="nota-qualidade">${windScore} / 10</div>
+                <p class="seta-label">Vento Desejado: ${desiredCardinalDirection} (${WIND_DIRECTION_DESIRED_DEG}°)</p>
+                
+                <div class="setas-container">
+                    <div class="seta-item">
+                        <span class="icone-seta" id="seta-atual" style="transform: rotate(${windDirectionDeg + 180}deg);">
+                            &#x27A4; </span>
+                        <div class="seta-label">Direção Atual</div>
+                    </div>
+                    
+                    <div class="seta-item">
+                        <span class="icone-seta" id="seta-desejada" style="transform: rotate(${WIND_DIRECTION_DESIRED_DEG + 180}deg);">
+                            &#x27A4; </span>
+                        <div class="seta-label">Direção Ideal</div>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Direção Atual</th>
+                            <th>Velocidade</th>
+                            <th>Nota (0-10)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="valor-principal">${cardinalDirection} (${windDirectionDeg}°)</td>
+                            <td class="valor-principal">${windSpeed} km/h</td>
+                            <td class="valor-principal">${windScore}</td>
+                        </tr>
+                    </tbody>
+                </table>
             `;
 
         } catch (error) {
