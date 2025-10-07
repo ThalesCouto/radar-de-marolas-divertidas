@@ -1,6 +1,6 @@
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #0077b6; /* Azul do Mar */
+    background-color: #0077b6; /* Azul do Mar (Fundo) */
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -43,6 +43,59 @@ h1 {
     font-size: 1em;
 }
 
+/* Estilo para o Slider de Horário */
+.time-slider-container {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.time-slider-container label {
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#current-time-display {
+    color: #ffba08; /* Amarelo */
+    font-size: 1.2em;
+}
+
+#time-slider {
+    width: 90%;
+    max-width: 600px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: #555;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+    border-radius: 4px;
+}
+
+#time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffba08;
+    cursor: pointer;
+}
+
+#time-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffba08;
+    cursor: pointer;
+}
+
+/* Estrutura Principal */
 .main-content {
     display: flex;
     gap: 30px;
@@ -91,7 +144,6 @@ h2 {
     padding: 10px 0;
 }
 
-/* COR DINÂMICA: A cor será definida pelo JavaScript via estilo inline */
 .nota-score {
     font-size: 3em;
     font-weight: 700;
@@ -104,34 +156,65 @@ h2 {
     margin-top: 5px;
 }
 
-/* Estilo das Setas */
+/* Estilo para a marcação do Norte e Setas */
 .setas-container {
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 25px;
     margin-bottom: 20px;
 }
 
 .seta-item {
     text-align: center;
+    position: relative; 
 }
 
+/* Container que envolve as setas e o marcador N (a "bússola") */
+.seta-referencia-container {
+    position: relative; 
+    width: 60px; 
+    height: 80px;
+    margin: 40px auto 10px; /* Aumenta a margem superior para afastar do texto superior */
+}
+
+#north-marker {
+    position: absolute;
+    top: -30px; /* Movido para CIMA do container */
+    left: 50%;
+    transform: translateX(-50%); 
+    font-weight: 700;
+    font-size: 1.2em;
+    color: #f00; /* Vermelho para o Norte */
+    z-index: 10;
+    pointer-events: none;
+    width: fit-content;
+}
+
+/* Seta (ícone) */
 .icone-seta {
     font-size: 3em;
     display: block;
-    margin: 5px auto;
+    position: absolute;
+    top: 20%;
+    left: 5%;
+    /* CORREÇÃO AQUI: Alinhamento perfeito do ícone */
+    transform: translate(-50%, -50%); 
     line-height: 1;
+    transition: transform 0.5s ease-out; 
 }
 
-/* COR DINÂMICA: A cor da seta atual será definida pelo JavaScript via estilo inline */
-.seta-atual {
-    transition: transform 0.5s ease-out;
-}
-
-/* Cor fixa para a seta ideal */
 .seta-desejada {
     color: #48c9b0; /* Verde/Ciano (Vento Ideal) */
 }
+
+/* Texto abaixo das setas */
+.seta-label {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-top: 5px; /* Volta para um espaçamento padrão */
+    /* Removemos o ajuste negativo que causou a sobreposição */
+}
+
 
 /* Gráfico */
 .chart-container {
