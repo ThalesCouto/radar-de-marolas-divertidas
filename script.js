@@ -4,16 +4,18 @@ const API_URL = "https://api.open-meteo.com/v1/forecast";
 const beaches = {
     itacoatiara: {
         name: "Praia de Itacoatiara",
-        lat: -22.97, // Latitude
-        lon: -43.04, // Longitude
-        desiredDeg: 10, // Nordeste (NE), ideal para surf em Ita
+        lat: -22.97, 
+        lon: -43.04,
+        desiredDeg: 10, 
+        hourlyData: null, // Armazenará os dados brutos horários
         chartInstance: null
     },
     itaipu: {
         name: "Canal de Itaipu",
         lat: -22.95, 
         lon: -43.06,
-        desiredDeg: 56, // Sudeste/Leste, ideal para Kitesurf no Canal
+        desiredDeg: 56, 
+        hourlyData: null, // Armazenará os dados brutos horários
         chartInstance: null
     }
 };
@@ -73,61 +75,71 @@ function calculateWindScore(currentDeg, desiredDeg) {
 }
 
 /**
- * Renderiza o card e o gráfico de uma praia específica.
+ * Calcula a cor do gradiente: Vermelho (0) -> Amarelo (5) -> Verde (10).
+ * @param {number} score - A nota do vento (0 a 10).
+ * @returns {string} - Cor CSS em formato hexadecimal.
  */
-function renderBeachData(beachKey, hourlyData) {
+function getColorForScore(score) {
+    const normalizedScore = Math.max(0, Math.min(10, score)) / 10;
+    let r, g;
+
+    if (normalizedScore <= 0.5) {
+        // Vermelho (0) para Amarelo (0.5)
+        r = 255;
+        g = Math.round(255 * (normalizedScore * 2));
+    } else {
+        // Amarelo (0.5) para Verde (1)
+        r = Math.round(255 * (1 - (normalizedScore - 0.5) * 2));
+        g = 255;
+    }
+    
+    // Converte para hexadecimal
+    const rHex = r.toString(16).padStart(2, '0');
+    const gHex = g.toString(16).padStart(2, '0');
+    const bHex = (0).toString(16).padStart(2, '0'); // Mantém o azul em 0
+
+    return `#${rHex}${gHex}${bHex}`;
+}
+
+
+/**
+ * Atualiza o display superior (nota, setas e velocidade) com base em um índice horário.
+ */
+function updateCurrentDisplay(beachKey, index) {
     const beach = beaches[beachKey];
+    const hourlyData = beach.hourlyData;
     const statusElement = document.getElementById(`${beachKey}-status`);
     const subtitleElement = document.getElementById(`${beachKey}-current-subtitle`);
-    const now = new Date();
-    const selectedDate = dateInput.value;
-    const todayFormatted = new Date().toISOString().slice(0, 10);
-    
-    // 1. Encontra o dado mais atual (ou primeira hora se for dia futuro)
-    let currentWind = null;
-    let currentIndex = -1;
-    
-    if (selectedDate === todayFormatted) {
-        // Para hoje, encontra a hora mais próxima
-        const currentHour = now.getHours();
-        currentIndex = hourlyData.time.findIndex(timeStr => {
-            const hour = parseInt(timeStr.substring(11, 13));
-            return hour >= currentHour;
-        });
-        if (currentIndex === -1) currentIndex = hourlyData.time.length - 1; // Pega o último se a hora atual já passou
-    } else {
-        // Para dias futuros, pega a primeira hora do dia
-        currentIndex = 0;
-    }
-    
-    currentWind = {
-        time: hourlyData.time[currentIndex],
-        speed: hourlyData.wind_speed_10m[currentIndex],
-        direction: hourlyData.wind_direction_10m[currentIndex]
+
+    // Busca os dados no índice clicado/selecionado
+    const currentWind = {
+        time: hourlyData.time[index],
+        speed: hourlyData.wind_speed_10m[index],
+        direction: hourlyData.wind_direction_10m[index]
     };
 
-    if (!currentWind || currentWind.speed === undefined) {
-        statusElement.innerHTML = `<p class="error">Dados de vento indisponíveis para a hora selecionada.</p>`;
-        return;
+    if (currentWind.speed === undefined) {
+        return; 
     }
 
-    const currentHourStr = currentWind.time.substring(11, 16);
-    subtitleElement.textContent = `Previsão atualizada para ${currentHourStr}h`;
-    
     const currentDirectionCardinal = degToCardinal(currentWind.direction);
     const currentScore = calculateWindScore(currentWind.direction, beach.desiredDeg);
     const desiredCardinal = degToCardinal(beach.desiredDeg);
+    const pointColor = getColorForScore(currentScore);
 
-    // 2. Renderiza o HTML (Atual e Setas)
+    const currentHourStr = currentWind.time.substring(11, 16);
+    subtitleElement.textContent = `Previsão selecionada: ${currentHourStr}h`;
+    
+    // Renderiza o HTML (Atual e Setas)
     const htmlContent = `
         <div class="current-data">
             <div class="nota-box">
-                <div class="nota-score">${currentScore}</div>
+                <div class="nota-score" style="color: ${pointColor};">${currentScore}</div>
                 <div class="nota-label">Nota (0-10)</div>
             </div>
             <div class="nota-box">
                 <div class="nota-score">${currentDirectionCardinal}</div>
-                <div class="nota-label">Vento Atual</div>
+                <div class="nota-label">Vento Previsto</div>
             </div>
             <div class="nota-box">
                 <div class="nota-score">${currentWind.speed.toFixed(0)} km/h</div>
@@ -137,10 +149,10 @@ function renderBeachData(beachKey, hourlyData) {
 
         <div class="setas-container">
             <div class="seta-item">
-                <span class="icone-seta seta-atual" style="transform: rotate(${currentWind.direction + 180}deg);">
+                <span class="icone-seta seta-atual" style="transform: rotate(${currentWind.direction + 180}deg); color: ${pointColor};">
                     &#x27A4;
                 </span>
-                <div class="seta-label">Atual (${currentWind.direction}°)</div>
+                <div class="seta-label">Previsto (${currentWind.direction}°)</div>
             </div>
             
             <div class="seta-item">
@@ -153,22 +165,55 @@ function renderBeachData(beachKey, hourlyData) {
     `;
     
     statusElement.innerHTML = htmlContent;
+}
+
+/**
+ * Renderiza o card e o gráfico de uma praia específica.
+ */
+function renderBeachData(beachKey, fetchedHourlyData) {
+    const beach = beaches[beachKey];
+    const statusElement = document.getElementById(`${beachKey}-status`);
+    const now = new Date();
+    const selectedDate = dateInput.value;
+    const todayFormatted = new Date().toISOString().slice(0, 10);
+    
+    // 1. Armazena os dados brutos horários para uso na função de clique
+    beach.hourlyData = fetchedHourlyData;
+
+    // 2. Determina o índice inicial a ser exibido no topo (hora mais próxima/primeira hora)
+    let initialIndexToDisplay = 0;
+    
+    if (selectedDate === todayFormatted) {
+        const currentHour = now.getHours();
+        initialIndexToDisplay = fetchedHourlyData.time.findIndex(timeStr => {
+            const hour = parseInt(timeStr.substring(11, 13));
+            return hour >= currentHour;
+        });
+        if (initialIndexToDisplay === -1) initialIndexToDisplay = fetchedHourlyData.time.length - 1;
+    } 
 
     // 3. Prepara dados para o Gráfico
-    const hours = hourlyData.time.map(t => t.substring(11, 16));
-    const scores = hourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
-    const directions = hourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
-    const speeds = hourlyData.wind_speed_10m.map(s => s.toFixed(0));
+    const hours = fetchedHourlyData.time.map(t => t.substring(11, 16));
+    const scores = fetchedHourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
+    const directions = fetchedHourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
+    const speeds = fetchedHourlyData.wind_speed_10m.map(s => s.toFixed(0));
+    
+    // 4. Renderiza o display inicial
+    updateCurrentDisplay(beachKey, initialIndexToDisplay);
 
+    // 5. Renderiza o Gráfico
     updateChart(beachKey, hours, scores, directions, speeds);
 }
 
 /**
- * Cria/Atualiza o gráfico de linha.
+ * Cria/Atualiza o gráfico de linha, adicionando cor aos pontos e o handler de clique.
  */
 function updateChart(beachKey, labels, scores, directions, speeds) {
     const ctx = document.getElementById(`${beachKey}-chart`).getContext('2d');
     const beach = beaches[beachKey];
+    
+    // Cria o array de cores dinâmicas para os pontos do gráfico
+    const pointColors = scores.map(score => getColorForScore(score));
 
     // Destrói a instância anterior se existir
     if (beach.chartInstance) {
@@ -182,21 +227,31 @@ function updateChart(beachKey, labels, scores, directions, speeds) {
             datasets: [{
                 label: 'Nota de Qualidade (0-10)',
                 data: scores,
-                borderColor: '#48c9b0',
+                borderColor: '#48c9b0', 
                 backgroundColor: 'rgba(72, 201, 176, 0.2)',
                 fill: true,
                 tension: 0.4,
                 yAxisID: 'y',
-                pointRadius: 3,
-                pointHoverRadius: 7
+                pointRadius: 4, 
+                pointHoverRadius: 8,
+                // Define as cores dinâmicas dos pontos
+                pointBackgroundColor: pointColors, 
             }]
         },
         options: {
             responsive: true,
+            // Handler de clique no gráfico
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const clickedIndex = elements[0].index;
+                    // Atualiza o display superior para a hora clicada
+                    updateCurrentDisplay(beachKey, clickedIndex);
+                }
+            },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Nota de Vento e Direção Horária',
+                    text: 'Nota de Vento e Direção Horária (Clique para Selecionar Hora)',
                     color: '#333'
                 },
                 legend: {
@@ -249,6 +304,7 @@ function updateChart(beachKey, labels, scores, directions, speeds) {
  * Faz a requisição da API para ambas as praias com base na data selecionada.
  */
 async function fetchAllData() {
+    // ... (restante da função fetchAllData, sem alteração) ...
     const selectedDate = dateInput.value;
     if (!selectedDate) return;
 
