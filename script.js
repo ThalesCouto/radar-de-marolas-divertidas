@@ -2,7 +2,7 @@ const API_URL = "https://api.open-meteo.com/v1/forecast";
 
 // Estrutura global para dados e configurações
 const globalState = {
-    hourlyTimeLabels: [], 
+    hourlyTimeLabels: [],
     itacoatiara: { name: "Praia de Itacoatiara", lat: -22.97, lon: -43.04, desiredDeg: 180+10, data: null, chartInstance: null },
     itaipu: { name: "Canal de Itaipu", lat: -22.95, lon: -43.06, desiredDeg: 180+56, data: null, chartInstance: null }
 };
@@ -46,17 +46,17 @@ function initializeTimeSlider() {
 
 function configureTimeSlider(hourlyTimes) {
     globalState.hourlyTimeLabels = hourlyTimes.map(t => t.substring(11, 16));
-    
+
     const maxIndex = globalState.hourlyTimeLabels.length - 1;
     timeSlider.max = maxIndex;
-    
+
     // ATIVA O SLIDER
     timeSlider.removeAttribute('disabled');
-    
+
     let initialIndex = 0;
     const selectedDate = dateInput.value;
     const todayFormatted = new Date().toISOString().slice(0, 10);
-    
+
     if (selectedDate === todayFormatted) {
         const now = new Date();
         const currentHour = now.getHours();
@@ -66,7 +66,7 @@ function configureTimeSlider(hourlyTimes) {
         });
         if (initialIndex === -1) initialIndex = maxIndex;
     }
-    
+
     timeSlider.value = initialIndex;
     currentTimeDisplay.textContent = globalState.hourlyTimeLabels[initialIndex];
 
@@ -99,7 +99,7 @@ function calculateWindScore(currentDeg, desiredDeg) {
 function getColorForScore(score) {
     const normalizedScore = Math.max(0, Math.min(10, score)) / 10;
     let r, g;
-    if (normalizedScore <= 0.5) { r = 255; g = Math.round(255 * (normalizedScore * 2)); } 
+    if (normalizedScore <= 0.5) { r = 255; g = Math.round(255 * (normalizedScore * 2)); }
     else { r = Math.round(255 * (1 - (normalizedScore - 0.5) * 2)); g = 255; }
     const rHex = r.toString(16).padStart(2, '0');
     const gHex = g.toString(16).padStart(2, '0');
@@ -117,7 +117,7 @@ function updateCurrentDisplay(beachKey, index) {
         statusElement.innerHTML = `<p class="error">Dados de vento não disponíveis para este horário.</p>`;
         return;
     }
-    
+
     const currentWind = {
         time: hourlyData.time[index],
         speed: hourlyData.wind_speed_10m[index],
@@ -131,7 +131,7 @@ function updateCurrentDisplay(beachKey, index) {
 
     const currentHourStr = globalState.hourlyTimeLabels[index];
     subtitleElement.textContent = `Previsão selecionada: ${currentHourStr}h`;
-    
+
     // FÓRMULA DE ROTAÇÃO CORRIGIDA: Direção Real - 90
     const currentRotation = currentWind.direction - 90;
     const desiredRotation = beach.desiredDeg - 90;
@@ -176,20 +176,33 @@ function updateCurrentDisplay(beachKey, index) {
             </div>
         </div>
     `;
-    
+
     if (statusElement) {
-         statusElement.innerHTML = htmlContent;
+        statusElement.innerHTML = htmlContent;
     }
 
     if (beach.chartInstance) {
-        beach.chartInstance.update(); 
+        beach.chartInstance.update();
     }
 }
+
+// NOVO: Função para obter o gradiente da área do gráfico
+function createAreaGradient(ctx, chartArea) {
+    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+
+    // Mapeia o eixo Y (qualidade): 0 (bottom) para 10 (top)
+    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.4)');     // Nota 0 (Vermelho)
+    gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.3)'); // Nota 5 (Amarelo)
+    gradient.addColorStop(1, 'rgba(72, 201, 176, 0.4)');  // Nota 10 (Verde/Ciano)
+
+    return gradient;
+}
+
 
 function updateChart(beachKey, scores, directions, speeds) {
     const ctx = document.getElementById(`${beachKey}-chart`).getContext('2d');
     const beach = globalState[beachKey];
-    
+
     const pointColors = scores.map(score => getColorForScore(score));
 
     if (beach.chartInstance) {
@@ -203,14 +216,24 @@ function updateChart(beachKey, scores, directions, speeds) {
             datasets: [{
                 label: 'Nota de Qualidade (0-10)',
                 data: scores,
-                borderColor: '#48c9b0', 
-                backgroundColor: 'rgba(72, 201, 176, 0.2)',
-                fill: true,
+                // ALTERAÇÃO AQUI: Mudando a cor da linha para o gradiente de cor da bolinha no ponto 1.0 (Verde/Ciano)
+                borderColor: '#48c9b0',
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const { ctx, chartArea } = chart;
+
+                    if (!chartArea) {
+                        return 'rgba(72, 201, 176, 0.4)';
+                    }
+                    // ALTERAÇÃO AQUI: Usa a função de gradiente para a área.
+                    return createAreaGradient(ctx, chartArea);
+                },
+                fill: 'origin', // Preenche a área até a linha base (0)
                 tension: 0.4,
                 yAxisID: 'y',
-                pointRadius: 4, 
+                pointRadius: 4,
                 pointHoverRadius: 8,
-                pointBackgroundColor: pointColors, 
+                pointBackgroundColor: pointColors,
             }]
         },
         options: {
@@ -218,8 +241,10 @@ function updateChart(beachKey, scores, directions, speeds) {
             onClick: (event, elements) => {
                 if (elements.length > 0) {
                     const clickedIndex = elements[0].index;
+
                     timeSlider.value = clickedIndex;
                     currentTimeDisplay.textContent = globalState.hourlyTimeLabels[clickedIndex];
+
                     updateCurrentDisplay('itacoatiara', clickedIndex);
                     updateCurrentDisplay('itaipu', clickedIndex);
                 }
@@ -235,6 +260,7 @@ function updateChart(beachKey, scores, directions, speeds) {
                     callbacks: {
                         afterLabel: function(context) {
                             const index = context.dataIndex;
+                            const beach = globalState[beachKey];
                             return [
                                 `Direção: ${directions[index]} (${beach.desiredDeg}° Ideal)`,
                                 `Velocidade: ${speeds[index]} km/h`
@@ -263,7 +289,7 @@ function updateChart(beachKey, scores, directions, speeds) {
 function renderBeachData(beachKey, fetchedHourlyData) {
     const beach = globalState[beachKey];
     const statusElement = document.getElementById(`${beachKey}-status`);
-    
+
     beach.data = fetchedHourlyData;
 
     let initialIndexToDisplay;
@@ -276,7 +302,7 @@ function renderBeachData(beachKey, fetchedHourlyData) {
     const scores = fetchedHourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
     const directions = fetchedHourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
     const speeds = fetchedHourlyData.wind_speed_10m.map(s => s.toFixed(0));
-    
+
     statusElement.innerHTML = '<div id="current-display-placeholder"></div>';
 
     updateChart(beachKey, scores, directions, speeds);
@@ -288,7 +314,6 @@ async function fetchAllData() {
     const selectedDate = dateInput.value;
     if (!selectedDate) return;
 
-    // Desativa o slider e reseta a lista de horas antes de buscar novos dados
     timeSlider.setAttribute('disabled', 'true');
     globalState.hourlyTimeLabels = [];
     currentTimeDisplay.textContent = '---';
@@ -298,7 +323,7 @@ async function fetchAllData() {
 
     const beachKeys = ['itacoatiara', 'itaipu'];
 
-    // Define o status de carregamento antes da busca
+    // Define o status de carregamento
     beachKeys.forEach(key => {
         document.getElementById(`${key}-status`).innerHTML = `<p class="loading">Buscando previsão para ${startDate.split('-').reverse().join('/')}...</p>`;
     });
@@ -318,13 +343,13 @@ async function fetchAllData() {
             });
 
             const response = await fetch(`${API_URL}?${params.toString()}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
 
             const data = await response.json();
-            
+
             if (data.hourly && data.hourly.time.length > 0) {
                 renderBeachData(key, data.hourly);
             } else {
@@ -336,6 +361,10 @@ async function fetchAllData() {
             statusElement.innerHTML = `<p class="error">Erro ao carregar os dados do vento para ${beach.name}.</p>`;
         }
     }
+
+    const initialIndexToDisplay = parseInt(timeSlider.value || 0);
+    updateCurrentDisplay('itacoatiara', initialIndexToDisplay);
+    updateCurrentDisplay('itaipu', initialIndexToDisplay);
 }
 
 // Inicia os listeners e o carregamento inicial
