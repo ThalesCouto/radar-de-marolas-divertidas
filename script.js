@@ -1,32 +1,34 @@
 const API_URL = "https://api.open-meteo.com/v1/forecast";
 
-// Global para armazenar os dados brutos e os horários disponíveis
-const globalState = {
-    hourlyTimeLabels: [], // Ex: ["00:00", "01:00", ...]
+// Configuração das Praias
+const beaches = {
     itacoatiara: {
-        data: null, // Dados brutos da API
-        chartInstance: null,
+        name: "Praia de Itacoatiara",
+        lat: -22.97, 
+        lon: -43.04,
         desiredDeg: 10, 
+        hourlyData: null, // Armazenará os dados brutos horários
+        chartInstance: null
     },
     itaipu: {
-        data: null,
-        chartInstance: null,
+        name: "Canal de Itaipu",
+        lat: -22.95, 
+        lon: -43.06,
         desiredDeg: 56, 
+        hourlyData: null, // Armazenará os dados brutos horários
+        chartInstance: null
     }
 };
 
 const dateInput = document.getElementById('date-input');
-const timeSlider = document.getElementById('time-slider');
-const currentTimeDisplay = document.getElementById('current-time-display');
 
 /**
  * Define o dia atual e o limite de 7 dias no seletor de data.
  */
 function initializeDateInput() {
-    // ... (função initializeDateInput permanece a mesma) ...
     const today = new Date();
     const maxDate = new Date();
-    maxDate.setDate(today.getDate() + 6);
+    maxDate.setDate(today.getDate() + 6); // Previsão de até 7 dias
 
     const formatDate = (date) => {
         const y = date.getFullYear();
@@ -44,57 +46,6 @@ function initializeDateInput() {
 
     dateInput.addEventListener('change', fetchAllData);
 }
-
-/**
- * Inicializa o listener do slider de horário.
- */
-function initializeTimeSlider() {
-    timeSlider.addEventListener('input', (event) => {
-        const index = parseInt(event.target.value);
-        
-        // 1. Atualiza o display de hora
-        currentTimeDisplay.textContent = globalState.hourlyTimeLabels[index];
-
-        // 2. Atualiza os cards das duas praias
-        updateCurrentDisplay('itacoatiara', index);
-        updateCurrentDisplay('itaipu', index);
-        
-        // 3. Destaca o ponto no gráfico (opcional, pode ser feito re-renderizando o ponto ativo)
-    });
-}
-
-/**
- * Configura o slider de acordo com o número de horas disponíveis na API.
- */
-function configureTimeSlider(hourlyTimes) {
-    globalState.hourlyTimeLabels = hourlyTimes.map(t => t.substring(11, 16));
-    
-    const maxIndex = globalState.hourlyTimeLabels.length - 1;
-    timeSlider.max = maxIndex;
-    timeSlider.disabled = false;
-    
-    // Define o valor inicial (hora mais próxima/primeira hora)
-    let initialIndex = 0;
-    const selectedDate = dateInput.value;
-    const todayFormatted = new Date().toISOString().slice(0, 10);
-    
-    if (selectedDate === todayFormatted) {
-        const now = new Date();
-        const currentHour = now.getHours();
-        initialIndex = hourlyTimes.findIndex(timeStr => {
-            const hour = parseInt(timeStr.substring(11, 13));
-            return hour >= currentHour;
-        });
-        if (initialIndex === -1) initialIndex = maxIndex;
-    }
-    
-    timeSlider.value = initialIndex;
-    currentTimeDisplay.textContent = globalState.hourlyTimeLabels[initialIndex];
-
-    return initialIndex; // Retorna o índice inicial para o display
-}
-
-// ---------------- Funções de Cálculo e Estilo ----------------
 
 /**
  * Converte graus de direção do vento (0-360) para pontos cardeais.
@@ -125,58 +76,61 @@ function calculateWindScore(currentDeg, desiredDeg) {
 
 /**
  * Calcula a cor do gradiente: Vermelho (0) -> Amarelo (5) -> Verde (10).
+ * @param {number} score - A nota do vento (0 a 10).
+ * @returns {string} - Cor CSS em formato hexadecimal.
  */
 function getColorForScore(score) {
     const normalizedScore = Math.max(0, Math.min(10, score)) / 10;
     let r, g;
 
     if (normalizedScore <= 0.5) {
+        // Vermelho (0) para Amarelo (0.5)
         r = 255;
         g = Math.round(255 * (normalizedScore * 2));
     } else {
+        // Amarelo (0.5) para Verde (1)
         r = Math.round(255 * (1 - (normalizedScore - 0.5) * 2));
         g = 255;
     }
     
+    // Converte para hexadecimal
     const rHex = r.toString(16).padStart(2, '0');
     const gHex = g.toString(16).padStart(2, '0');
-    const bHex = (0).toString(16).padStart(2, '0');
+    const bHex = (0).toString(16).padStart(2, '0'); // Mantém o azul em 0
 
     return `#${rHex}${gHex}${bHex}`;
 }
 
 
-// ---------------- Funções de Atualização de Display ----------------
-
 /**
  * Atualiza o display superior (nota, setas e velocidade) com base em um índice horário.
  */
 function updateCurrentDisplay(beachKey, index) {
-    const beach = globalState[beachKey];
-    const hourlyData = beach.data;
+    const beach = beaches[beachKey];
+    const hourlyData = beach.hourlyData;
     const statusElement = document.getElementById(`${beachKey}-status`);
     const subtitleElement = document.getElementById(`${beachKey}-current-subtitle`);
 
-    if (!hourlyData || hourlyData.time.length <= index) {
-        return;
-    }
-    
-    // 1. Busca os dados no índice selecionado/clicado
+    // Busca os dados no índice clicado/selecionado
     const currentWind = {
         time: hourlyData.time[index],
         speed: hourlyData.wind_speed_10m[index],
         direction: hourlyData.wind_direction_10m[index]
     };
 
+    if (currentWind.speed === undefined) {
+        return; 
+    }
+
     const currentDirectionCardinal = degToCardinal(currentWind.direction);
     const currentScore = calculateWindScore(currentWind.direction, beach.desiredDeg);
     const desiredCardinal = degToCardinal(beach.desiredDeg);
     const pointColor = getColorForScore(currentScore);
 
-    const currentHourStr = globalState.hourlyTimeLabels[index];
+    const currentHourStr = currentWind.time.substring(11, 16);
     subtitleElement.textContent = `Previsão selecionada: ${currentHourStr}h`;
     
-    // 2. Renderiza o HTML (Atual e Setas)
+    // Renderiza o HTML (Atual e Setas)
     const htmlContent = `
         <div class="current-data">
             <div class="nota-box">
@@ -211,23 +165,57 @@ function updateCurrentDisplay(beachKey, index) {
     `;
     
     statusElement.innerHTML = htmlContent;
+}
 
-    // 3. Atualiza o gráfico para garantir que o ponto clicado/selecionado esteja destacado
-    if (beach.chartInstance) {
-        // Encontra o ponto ativo no dataset e re-renderiza o gráfico se necessário
-        beach.chartInstance.update(); 
-    }
+/**
+ * Renderiza o card e o gráfico de uma praia específica.
+ */
+function renderBeachData(beachKey, fetchedHourlyData) {
+    const beach = beaches[beachKey];
+    const statusElement = document.getElementById(`${beachKey}-status`);
+    const now = new Date();
+    const selectedDate = dateInput.value;
+    const todayFormatted = new Date().toISOString().slice(0, 10);
+    
+    // 1. Armazena os dados brutos horários para uso na função de clique
+    beach.hourlyData = fetchedHourlyData;
+
+    // 2. Determina o índice inicial a ser exibido no topo (hora mais próxima/primeira hora)
+    let initialIndexToDisplay = 0;
+    
+    if (selectedDate === todayFormatted) {
+        const currentHour = now.getHours();
+        initialIndexToDisplay = fetchedHourlyData.time.findIndex(timeStr => {
+            const hour = parseInt(timeStr.substring(11, 13));
+            return hour >= currentHour;
+        });
+        if (initialIndexToDisplay === -1) initialIndexToDisplay = fetchedHourlyData.time.length - 1;
+    } 
+
+    // 3. Prepara dados para o Gráfico
+    const hours = fetchedHourlyData.time.map(t => t.substring(11, 16));
+    const scores = fetchedHourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
+    const directions = fetchedHourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
+    const speeds = fetchedHourlyData.wind_speed_10m.map(s => s.toFixed(0));
+    
+    // 4. Renderiza o display inicial
+    updateCurrentDisplay(beachKey, initialIndexToDisplay);
+
+    // 5. Renderiza o Gráfico
+    updateChart(beachKey, hours, scores, directions, speeds);
 }
 
 /**
  * Cria/Atualiza o gráfico de linha, adicionando cor aos pontos e o handler de clique.
  */
-function updateChart(beachKey, scores, directions, speeds) {
+function updateChart(beachKey, labels, scores, directions, speeds) {
     const ctx = document.getElementById(`${beachKey}-chart`).getContext('2d');
-    const beach = globalState[beachKey];
+    const beach = beaches[beachKey];
     
+    // Cria o array de cores dinâmicas para os pontos do gráfico
     const pointColors = scores.map(score => getColorForScore(score));
 
+    // Destrói a instância anterior se existir
     if (beach.chartInstance) {
         beach.chartInstance.destroy();
     }
@@ -235,7 +223,7 @@ function updateChart(beachKey, scores, directions, speeds) {
     beach.chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: globalState.hourlyTimeLabels,
+            labels: labels,
             datasets: [{
                 label: 'Nota de Qualidade (0-10)',
                 data: scores,
@@ -246,35 +234,24 @@ function updateChart(beachKey, scores, directions, speeds) {
                 yAxisID: 'y',
                 pointRadius: 4, 
                 pointHoverRadius: 8,
+                // Define as cores dinâmicas dos pontos
                 pointBackgroundColor: pointColors, 
             }]
         },
         options: {
             responsive: true,
-            // Handler de clique no gráfico (Atualiza o slider e o display)
+            // Handler de clique no gráfico
             onClick: (event, elements) => {
                 if (elements.length > 0) {
                     const clickedIndex = elements[0].index;
-                    
-                    // 1. Atualiza o valor do slider
-                    timeSlider.value = clickedIndex;
-
-                    // 2. Chama a função de atualização (que já é o listener do slider)
+                    // Atualiza o display superior para a hora clicada
                     updateCurrentDisplay(beachKey, clickedIndex);
-                    
-                    // Como a atualização do slider não dispara o evento 'input', atualizamos o display da hora
-                    currentTimeDisplay.textContent = globalState.hourlyTimeLabels[clickedIndex];
-
-                    // Garante que o display da outra praia também atualize
-                    const otherBeachKey = (beachKey === 'itacoatiara') ? 'itaipu' : 'itacoatiara';
-                    updateCurrentDisplay(otherBeachKey, clickedIndex);
                 }
             },
             plugins: {
-                // ... (restante das opções do gráfico, sem alteração) ...
                 title: {
                     display: true,
-                    text: 'Nota de Vento Horária (Clique ou Arraste para Selecionar Hora)',
+                    text: 'Nota de Vento e Direção Horária (Clique para Selecionar Hora)',
                     color: '#333'
                 },
                 legend: {
@@ -293,7 +270,6 @@ function updateChart(beachKey, scores, directions, speeds) {
                 }
             },
             scales: {
-                // ... (restante das configurações de escala, sem alteração) ...
                 x: {
                     title: {
                         display: true,
@@ -325,64 +301,21 @@ function updateChart(beachKey, scores, directions, speeds) {
 }
 
 /**
- * Renderiza o card e o gráfico de uma praia específica.
- */
-function renderBeachData(beachKey, fetchedHourlyData) {
-    const beach = globalState[beachKey];
-    const statusElement = document.getElementById(`${beachKey}-status`);
-    
-    // 1. Armazena os dados brutos horários
-    beach.data = fetchedHourlyData;
-
-    // 2. Se for a primeira praia a ser processada, configura o slider
-    let initialIndexToDisplay;
-    if (globalState.hourlyTimeLabels.length === 0) {
-        initialIndexToDisplay = configureTimeSlider(fetchedHourlyData.time);
-    } else {
-        // Usa o índice atual do slider se já estiver configurado
-        initialIndexToDisplay = parseInt(timeSlider.value);
-    }
-
-    // 3. Prepara dados para o Gráfico
-    const scores = fetchedHourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
-    const directions = fetchedHourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
-    const speeds = fetchedHourlyData.wind_speed_10m.map(s => s.toFixed(0));
-    
-    // Remove o loading e injeta um conteúdo inicial para garantir que o display seja atualizado depois
-    statusElement.innerHTML = '<div id="current-display-placeholder"></div>';
-
-    // 4. Renderiza o Gráfico
-    updateChart(beachKey, scores, directions, speeds);
-
-    // 5. Renderiza o display inicial com base no índice determinado
-    updateCurrentDisplay(beachKey, initialIndexToDisplay);
-}
-
-/**
  * Faz a requisição da API para ambas as praias com base na data selecionada.
  */
 async function fetchAllData() {
+    // ... (restante da função fetchAllData, sem alteração) ...
     const selectedDate = dateInput.value;
     if (!selectedDate) return;
-
-    // Reset global state for new date
-    globalState.hourlyTimeLabels = [];
-    timeSlider.disabled = true;
-    currentTimeDisplay.textContent = '---';
 
     const startDate = selectedDate;
     const endDate = selectedDate;
 
-    // Keys of the beaches
-    const beachKeys = ['itacoatiara', 'itaipu'];
+    for (const key in beaches) {
+        const beach = beaches[key];
+        const statusElement = document.getElementById(`${key}-status`);
+        statusElement.innerHTML = `<p class="loading">Buscando previsão para ${startDate.split('-').reverse().join('/')}...</p>`;
 
-    // Update loading status for both
-    beachKeys.forEach(key => {
-        document.getElementById(`${key}-status`).innerHTML = `<p class="loading">Buscando previsão para ${startDate.split('-').reverse().join('/')}...</p>`;
-    });
-
-    for (const key of beachKeys) {
-        const beach = globalState[key];
         try {
             const params = new URLSearchParams({
                 latitude: beach.lat,
@@ -408,15 +341,14 @@ async function fetchAllData() {
             }
 
         } catch (error) {
-            console.error(`Erro ao buscar dados para ${key}:`, error);
-            document.getElementById(`${key}-status`).innerHTML = `<p class="error">Erro ao carregar os dados do vento para ${key}.</p>`;
+            console.error(`Erro ao buscar dados para ${beach.name}:`, error);
+            statusElement.innerHTML = `<p class="error">Erro ao carregar os dados do vento para ${beach.name}.</p>`;
         }
     }
 }
 
-// Inicia os listeners e o carregamento inicial
+// Inicia o seletor de data e carrega os dados
 initializeDateInput();
-initializeTimeSlider();
 fetchAllData();
-// Atualiza os dados a cada 15 minutos (900000 milissegundos)
+// Opcional: Atualizar os dados a cada 15 minutos (900000 milissegundos)
 setInterval(fetchAllData, 900000);
