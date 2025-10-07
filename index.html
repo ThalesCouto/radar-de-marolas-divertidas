@@ -3,89 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vento em Itacoatiara - Análise</title>
+    <title>Análise de Vento - Itacoatiara e Itaipu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #0077b6; /* Azul do Mar */
             color: #ffffff;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-start;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            text-align: center;
             padding: 20px;
         }
 
-        .container {
+        .header-container {
             background-color: rgba(0, 0, 0, 0.4);
-            padding: 40px;
+            padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
-            width: 100%;
-        }
-
-        h1 {
-            font-size: 2em;
-            margin-bottom: 5px;
-            border-bottom: 2px solid #ffba08;
-            padding-bottom: 5px;
-        }
-
-        h2 {
-            font-size: 1em;
-            font-weight: 300;
-            margin-top: 0;
             margin-bottom: 30px;
-        }
-
-        /* Estilo da Tabela */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
-        }
-
-        th, td {
-            padding: 12px 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            width: 90%;
+            max-width: 1200px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
 
-        th {
-            background-color: rgba(255, 255, 255, 0.1);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85em;
+        .date-selector label {
+            font-size: 1.1em;
+            margin-right: 10px;
         }
 
-        .valor-principal {
-            font-size: 1.2em;
+        .date-selector input[type="date"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            font-family: inherit;
+            font-size: 1em;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 30px;
+            width: 90%;
+            max-width: 1200px;
+            flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+            justify-content: center;
+        }
+
+        .beach-card {
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            flex: 1; /* Distribui o espaço entre os cards */
+            min-width: 450px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #ffba08;
+            padding-bottom: 5px;
+            text-align: center;
+        }
+
+        .card-subtitle {
+            font-size: 0.9em;
+            font-weight: 300;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Estilo para a Nota de Qualidade Atual */
+        .current-data {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .nota-box {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .nota-score {
+            font-size: 3em;
             font-weight: 700;
-            color: #ffba08; /* Amarelo */
+            color: #48c9b0; /* Verde/Ciano */
+            line-height: 1;
+        }
+
+        .nota-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
         }
 
         /* Estilo das Setas */
         .setas-container {
             display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin: 30px 0;
-            padding: 10px;
-            border-top: 1px dashed rgba(255, 255, 255, 0.3);
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
         }
 
         .seta-item {
             text-align: center;
-        }
-
-        .seta-label {
-            font-size: 0.8em;
-            opacity: 0.8;
         }
 
         .icone-seta {
@@ -95,24 +124,25 @@
             line-height: 1;
         }
 
-        #seta-atual {
+        .seta-atual {
             color: #ffba08; /* Amarelo */
             transition: transform 0.5s ease-out;
         }
 
-        #seta-desejada {
+        .seta-desejada {
             color: #48c9b0; /* Verde/Ciano */
         }
         
-        /* Estilo para a Nota de Qualidade */
-        #nota-qualidade {
-            font-size: 3em;
-            font-weight: 700;
-            margin-top: 20px;
-            color: #48c9b0;
+        /* Gráfico */
+        .chart-container {
+            margin-top: 30px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
         }
 
         .loading, .error {
+            text-align: center;
             font-size: 1.2em;
             margin-top: 30px;
         }
@@ -120,156 +150,347 @@
 </head>
 <body>
 
-<div class="container">
-    <h1>Análise do Vento</h1>
-    <h2>Praia de Itacoatiara, Niterói</h2>
-
-    <div id="status-display">
-        <p class="loading">Buscando dados do vento...</p>
+<div class="header-container">
+    <h1>Previsão do Vento para o Surf</h1>
+    <div class="date-selector">
+        <label for="date-input">Selecione o Dia:</label>
+        <input type="date" id="date-input">
     </div>
+</div>
+
+<div class="main-content">
+    
+    <div class="beach-card" id="itacoatiara-card">
+        <h2>Praia de Itacoatiara</h2>
+        <div class="card-subtitle" id="itacoatiara-current-subtitle"></div>
+        
+        <div class="loading" id="itacoatiara-status">Buscando dados...</div>
+        
+        <div class="chart-container">
+            <canvas id="itacoatiara-chart"></canvas>
+        </div>
+    </div>
+
+    <div class="beach-card" id="itaipu-card">
+        <h2>Canal de Itaipu</h2>
+        <div class="card-subtitle" id="itaipu-current-subtitle"></div>
+        
+        <div class="loading" id="itaipu-status">Buscando dados...</div>
+        
+        <div class="chart-container">
+            <canvas id="itaipu-chart"></canvas>
+        </div>
+    </div>
+
 </div>
 
 <script>
     const API_URL = "https://api.open-meteo.com/v1/forecast";
-    // Coordenadas aproximadas da Praia de Itacoatiara
-    const ITACOATIARA_LAT = -22.97; 
-    const ITACOATIARA_LON = -43.04;
     
-    // Vento Desejado (Exemplo: 10 graus é NE, ótimo para surf em Ita)
-    const WIND_DIRECTION_DESIRED_DEG = 10; 
+    // Configuração das Praias
+    const beaches = {
+        itacoatiara: {
+            name: "Praia de Itacoatiara",
+            lat: -22.97, 
+            lon: -43.04,
+            desiredDeg: 10, // Nordeste (NE)
+            chartInstance: null
+        },
+        itaipu: {
+            name: "Canal de Itaipu",
+            lat: -22.95, // Próximo ao Canal
+            lon: -43.06,
+            desiredDeg: 56, // Ideal para Kitesurf no Canal
+            chartInstance: null
+        }
+    };
+
+    const dateInput = document.getElementById('date-input');
+
+    // Inicializa o seletor de data para o dia atual e o máximo para 7 dias
+    function initializeDateInput() {
+        const today = new Date();
+        const maxDate = new Date();
+        maxDate.setDate(today.getDate() + 6); // Previsão de até 7 dias (hoje + 6)
+
+        const formatDate = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const todayFormatted = formatDate(today);
+        const maxFormatted = formatDate(maxDate);
+
+        dateInput.value = todayFormatted;
+        dateInput.min = todayFormatted;
+        dateInput.max = maxFormatted;
+
+        dateInput.addEventListener('change', fetchAllData);
+    }
 
     /**
      * Converte graus de direção do vento (0-360) para pontos cardeais.
-     * @param {number} deg - Direção do vento em graus.
-     * @returns {string} - Ponto cardeal.
      */
     function degToCardinal(deg) {
-        if (deg > 337.5 || deg <= 22.5) return "Norte (N)";
-        if (deg > 22.5 && deg <= 67.5) return "Nordeste (NE)";
-        if (deg > 67.5 && deg <= 112.5) return "Leste (L)";
-        if (deg > 112.5 && deg <= 157.5) return "Sudeste (SE)";
-        if (deg > 157.5 && deg <= 202.5) return "Sul (S)";
-        if (deg > 202.5 && deg <= 247.5) return "Sudoeste (SO)";
-        if (deg > 247.5 && deg <= 292.5) return "Oeste (O)";
-        if (deg > 292.5 && deg <= 337.5) return "Noroeste (NO)";
-        return "Indefinido";
+        if (deg > 337.5 || deg <= 22.5) return "N";
+        if (deg > 22.5 && deg <= 67.5) return "NE";
+        if (deg > 67.5 && deg <= 112.5) return "L";
+        if (deg > 112.5 && deg <= 157.5) return "SE";
+        if (deg > 157.5 && deg <= 202.5) return "S";
+        if (deg > 202.5 && deg <= 247.5) return "SO";
+        if (deg > 247.5 && deg <= 292.5) return "O";
+        if (deg > 292.5 && deg <= 337.5) return "NO";
+        return "Indef.";
     }
 
     /**
-     * Calcula uma nota de 0 a 10 com base na proximidade da direção do vento atual com a desejada.
-     * 10 = direção exata.
-     * 0 = direção oposta (180 graus de diferença).
-     * @param {number} currentDeg - Direção atual do vento em graus (0-360).
-     * @param {number} desiredDeg - Direção desejada em graus (0-360).
-     * @returns {number} - Nota de 0 a 10.
+     * Calcula uma nota de 0 a 10 com base na proximidade da direção do vento.
      */
     function calculateWindScore(currentDeg, desiredDeg) {
-        // Calcula a diferença angular
         let diff = Math.abs(currentDeg - desiredDeg);
-        
-        // Se a diferença for maior que 180, pega o caminho mais curto
         if (diff > 180) {
             diff = 360 - diff;
         }
-
-        // 180 graus de diferença (oposto) = nota 0
-        // 0 graus de diferença (igual) = nota 10
-        // Mapeia a diferença de 0-180 para a nota 10-0
         const score = 10 - (diff / 180) * 10;
-        
-        // Limita a duas casas decimais
-        return score.toFixed(1);
+        return parseFloat(score.toFixed(1));
     }
 
     /**
-     * Busca os dados do vento na API e atualiza a tela.
+     * Renderiza o card e o gráfico de uma praia específica.
      */
-    async function getWindData() {
-        const display = document.getElementById('status-display');
-        display.innerHTML = '<p class="loading">Buscando dados do vento...</p>';
-
-        try {
-            const params = new URLSearchParams({
-                latitude: ITACOATIARA_LAT,
-                longitude: ITACOATIARA_LON,
-                current: 'wind_speed_10m,wind_direction_10m', // Vento a 10m de altura
-                forecast_days: 1,
-                timezone: 'America/Sao_Paulo'
+    function renderBeachData(beachKey, hourlyData) {
+        const beach = beaches[beachKey];
+        const cardElement = document.getElementById(`${beachKey}-card`);
+        const statusElement = document.getElementById(`${beachKey}-status`);
+        const subtitleElement = document.getElementById(`${beachKey}-current-subtitle`);
+        const now = new Date();
+        const selectedDate = dateInput.value;
+        const todayFormatted = new Date().toISOString().slice(0, 10);
+        
+        // 1. Encontra o dado mais atual
+        let currentWind = null;
+        let currentIndex = -1;
+        
+        // Se a data selecionada for hoje, busca o dado atual/mais próximo
+        if (selectedDate === todayFormatted) {
+            const currentHour = now.getHours();
+            currentIndex = hourlyData.time.findIndex(timeStr => {
+                const hour = parseInt(timeStr.substring(11, 13));
+                return hour >= currentHour;
             });
+            // Se não encontrou, pega o último do dia
+            if (currentIndex === -1) currentIndex = hourlyData.time.length - 1;
+            
+            currentWind = {
+                time: hourlyData.time[currentIndex],
+                speed: hourlyData.wind_speed_10m[currentIndex],
+                direction: hourlyData.wind_direction_10m[currentIndex]
+            };
+            
+            // Atualiza o subtítulo para mostrar a hora atualizada
+            const currentHourStr = currentWind.time.substring(11, 16);
+            subtitleElement.textContent = `Previsão atualizada para ${currentHourStr}h`;
+            
+        } else {
+            // Se for previsão futura, pega a primeira hora do dia
+            currentIndex = 0;
+            currentWind = {
+                time: hourlyData.time[currentIndex],
+                speed: hourlyData.wind_speed_10m[currentIndex],
+                direction: hourlyData.wind_direction_10m[currentIndex]
+            };
+            subtitleElement.textContent = `Previsão para ${selectedDate.split('-').reverse().join('/')}`;
+        }
+        
+        // Se não houver dados, exibe erro
+        if (!currentWind) {
+            statusElement.innerHTML = `<p class="error">Dados de vento indisponíveis para a data.</p>`;
+            return;
+        }
 
-            const response = await fetch(`${API_URL}?${params.toString()}`);
-            
-            if (!response.ok) {
-                throw new Error(`Erro HTTP: ${response.status}`);
-            }
+        const currentDirectionCardinal = degToCardinal(currentWind.direction);
+        const currentScore = calculateWindScore(currentWind.direction, beach.desiredDeg);
+        const desiredCardinal = degToCardinal(beach.desiredDeg);
 
-            const data = await response.json();
-            
-            // Extrai os dados
-            const windSpeed = data.current.wind_speed_10m; // km/h
-            const windDirectionDeg = data.current.wind_direction_10m; // graus
-            const cardinalDirection = degToCardinal(windDirectionDeg);
-            
-            // Calcula a nota
-            const windScore = calculateWindScore(windDirectionDeg, WIND_DIRECTION_DESIRED_DEG);
-
-            // Determina a direção desejada em pontos cardeais
-            const desiredCardinalDirection = degToCardinal(WIND_DIRECTION_DESIRED_DEG);
-            
-            // Renderiza o resultado
-            display.innerHTML = `
-                <p class="seta-label">Qualidade da Direção</p>
-                <div id="nota-qualidade">${windScore} / 10</div>
-                <p class="seta-label">Vento Desejado: ${desiredCardinalDirection} (${WIND_DIRECTION_DESIRED_DEG}°)</p>
-                
-                <div class="setas-container">
-                    <div class="seta-item">
-                        <span class="icone-seta" id="seta-atual" style="transform: rotate(${windDirectionDeg + 180}deg);">
-                            &#x27A4; </span>
-                        <div class="seta-label">Direção Atual</div>
-                    </div>
-                    
-                    <div class="seta-item">
-                        <span class="icone-seta" id="seta-desejada" style="transform: rotate(${WIND_DIRECTION_DESIRED_DEG + 180}deg);">
-                            &#x27A4; </span>
-                        <div class="seta-label">Direção Ideal</div>
-                    </div>
+        // 2. Renderiza o HTML (Atual e Setas)
+        const htmlContent = `
+            <div class="current-data">
+                <div class="nota-box">
+                    <div class="nota-score">${currentScore}</div>
+                    <div class="nota-label">Nota (0-10)</div>
                 </div>
+                <div class="nota-box">
+                    <div class="nota-score">${currentDirectionCardinal}</div>
+                    <div class="nota-label">Vento Atual</div>
+                </div>
+                <div class="nota-box">
+                    <div class="nota-score">${currentWind.speed.toFixed(0)} km/h</div>
+                    <div class="nota-label">Velocidade</div>
+                </div>
+            </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Direção Atual</th>
-                            <th>Velocidade</th>
-                            <th>Nota (0-10)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="valor-principal">${cardinalDirection} (${windDirectionDeg}°)</td>
-                            <td class="valor-principal">${windSpeed} km/h</td>
-                            <td class="valor-principal">${windScore}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
+            <div class="setas-container">
+                <div class="seta-item">
+                    <span class="icone-seta seta-atual" style="transform: rotate(${currentWind.direction + 180}deg);">
+                        &#x27A4;
+                    </span>
+                    <div class="seta-label">Atual (${currentWind.direction}°)</div>
+                </div>
+                
+                <div class="seta-item">
+                    <span class="icone-seta seta-desejada" style="transform: rotate(${beach.desiredDeg + 180}deg);">
+                        &#x27A4;
+                    </span>
+                    <div class="seta-label">Ideal (${desiredCardinal}, ${beach.desiredDeg}°)</div>
+                </div>
+            </div>
+        `;
+        
+        // Remove o loading e injeta o conteúdo
+        statusElement.innerHTML = htmlContent;
 
-        } catch (error) {
-            console.error("Erro ao buscar dados do vento:", error);
-            display.innerHTML = `
-                <p class="error">
-                    Erro ao carregar os dados do vento. Tente recarregar a página.
-                </p>
-            `;
+        // 3. Renderiza o Gráfico
+        const hours = hourlyData.time.map(t => t.substring(11, 16)); // Ex: "10:00"
+        const scores = hourlyData.wind_direction_10m.map(deg => calculateWindScore(deg, beach.desiredDeg));
+        const directions = hourlyData.wind_direction_10m.map(deg => degToCardinal(deg));
+        const speeds = hourlyData.wind_speed_10m.map(s => s.toFixed(0));
+
+        updateChart(beachKey, hours, scores, directions, speeds);
+    }
+
+    /**
+     * Cria/Atualiza o gráfico de linha.
+     */
+    function updateChart(beachKey, labels, scores, directions, speeds) {
+        const ctx = document.getElementById(`${beachKey}-chart`).getContext('2d');
+        const beach = beaches[beachKey];
+
+        // Destrói a instância anterior se existir
+        if (beach.chartInstance) {
+            beach.chartInstance.destroy();
+        }
+
+        beach.chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Nota de Qualidade (0-10)',
+                    data: scores,
+                    borderColor: '#48c9b0', // Cor da nota (Verde/Ciano)
+                    backgroundColor: 'rgba(72, 201, 176, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Nota de Vento e Direção Horária',
+                        color: '#333'
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                return [
+                                    `Direção: ${directions[index]} (${beach.desiredDeg} ideal)`,
+                                    `Velocidade: ${speeds[index]} km/h`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hora do Dia',
+                            color: '#333'
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#333'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Nota de Vento',
+                            color: '#333'
+                        },
+                        min: 0,
+                        max: 10,
+                        ticks: {
+                            color: '#333'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Faz a requisição da API para ambas as praias.
+     */
+    async function fetchAllData() {
+        const selectedDate = dateInput.value;
+        if (!selectedDate) return;
+
+        // Converte a data selecionada para o formato "YYYY-MM-DD" necessário para a API
+        const startDate = selectedDate;
+        const endDate = selectedDate;
+
+        for (const key in beaches) {
+            const beach = beaches[key];
+            const statusElement = document.getElementById(`${key}-status`);
+            statusElement.innerHTML = `<p class="loading">Buscando previsão para ${startDate}...</p>`;
+
+            try {
+                const params = new URLSearchParams({
+                    latitude: beach.lat,
+                    longitude: beach.lon,
+                    hourly: 'wind_speed_10m,wind_direction_10m', // Dados horários
+                    start_date: startDate,
+                    end_date: endDate,
+                    timezone: 'America/Sao_Paulo'
+                });
+
+                const response = await fetch(`${API_URL}?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.hourly && data.hourly.time.length > 0) {
+                    renderBeachData(key, data.hourly);
+                } else {
+                    throw new Error("Dados horários não encontrados.");
+                }
+
+            } catch (error) {
+                console.error(`Erro ao buscar dados para ${beach.name}:`, error);
+                statusElement.innerHTML = `<p class="error">Erro ao carregar os dados do vento para ${beach.name}.</p>`;
+            }
         }
     }
 
-    // Chama a função ao carregar a página
-    getWindData();
-
-    // Opcional: Atualizar os dados a cada 5 minutos (300000 milissegundos)
-    setInterval(getWindData, 300000); 
-
+    // Inicia o seletor de data e carrega os dados iniciais
+    initializeDateInput();
+    fetchAllData();
+    
 </script>
 
 </body>
