@@ -1,159 +1,53 @@
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #0077b6; /* Azul do Mar */
-    color: #ffffff;
+/* ... Seu código CSS anterior ... */
+
+/* Estilo para o Slider de Horário */
+.time-slider-container {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
     align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px;
 }
 
-.header-container {
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    width: 90%;
-    max-width: 1200px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    text-align: center;
-}
-
-h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #ffba08;
-    padding-bottom: 5px;
-    text-align: center;
-}
-
-.date-selector label {
-    font-size: 1.1em;
-    margin-right: 10px;
-}
-
-.date-selector input[type="date"] {
-    padding: 8px;
-    border-radius: 5px;
-    border: none;
-    font-family: inherit;
-    font-size: 1em;
-}
-
-.main-content {
-    display: flex;
-    gap: 30px;
-    width: 90%;
-    max-width: 1200px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.beach-card {
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    flex: 1;
-    min-width: 450px;
-    margin-bottom: 20px;
-}
-
-h2 {
-    font-size: 1.8em;
+.time-slider-container label {
     margin-bottom: 10px;
-    border-bottom: 2px solid #ffba08;
-    padding-bottom: 5px;
-    text-align: center;
+    font-weight: 600;
 }
 
-.card-subtitle {
-    font-size: 0.9em;
-    font-weight: 300;
-    margin-top: 0;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-/* Nota e Velocidade Atuais */
-.current-data {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin: 20px 0;
-}
-
-.nota-box {
-    text-align: center;
-    padding: 10px 0;
-}
-
-/* COR DINÂMICA: A cor será definida pelo JavaScript via estilo inline */
-.nota-score {
-    font-size: 3em;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.nota-label {
-    font-size: 0.9em;
-    opacity: 0.8;
-    margin-top: 5px;
-}
-
-/* Estilo das Setas */
-.setas-container {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-bottom: 20px;
-}
-
-.seta-item {
-    text-align: center;
-}
-
-.icone-seta {
-    font-size: 3em;
-    display: block;
-    margin: 5px auto;
-    line-height: 1;
-}
-
-/* COR DINÂMICA: A cor da seta atual será definida pelo JavaScript via estilo inline */
-.seta-atual {
-    transition: transform 0.5s ease-out;
-}
-
-/* Cor fixa para a seta ideal */
-.seta-desejada {
-    color: #48c9b0; /* Verde/Ciano (Vento Ideal) */
-}
-
-/* Gráfico */
-.chart-container {
-    margin-top: 30px;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 10px;
-}
-
-.loading, .error {
-    text-align: center;
+#current-time-display {
+    color: #ffba08; /* Amarelo */
     font-size: 1.2em;
-    margin-top: 30px;
 }
 
-/* Responsividade básica */
-@media (max-width: 992px) {
-    .main-content {
-        flex-direction: column;
-        align-items: center;
-    }
-    .beach-card {
-        min-width: 90%;
-    }
+#time-slider {
+    width: 90%;
+    max-width: 600px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: #555;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+    border-radius: 4px;
+}
+
+#time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffba08;
+    cursor: pointer;
+}
+
+#time-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffba08;
+    cursor: pointer;
 }
