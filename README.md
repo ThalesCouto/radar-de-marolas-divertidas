@@ -1,4 +1,4 @@
 # radar-de-marolas-divertidas
-radar de marolas divertidas para o surf em Itacoatiara e no Canal de Itaipu
+Previsão de marolas divertidas para o surf em Itacoatiara e no Canal de Itaipu
 
 https://thalescouto.github.io/radar-de-marolas-divertidas/index.html
